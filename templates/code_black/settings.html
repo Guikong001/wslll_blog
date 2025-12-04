@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'code_black/base.html' %}
 
 {% block title %}{% if current_lang == 'zh' %}设置{% else %}Settings{% endif %}{% endblock %}
 
@@ -10,7 +10,48 @@
         </h2>
         
         <form method="POST" enctype="multipart/form-data">
-            <div class="mb-6">
+            <!-- Theme Selection -->
+            <div class="mb-8 pb-8 border-b border-gray-700">
+                <h3 class="text-xl font-bold font-mono mb-4 text-neon-blue">
+                    {% if current_lang == 'zh' %}主题设置{% else %}THEME SETTINGS{% endif %}
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="relative cursor-pointer group">
+                        <input type="radio" name="theme" value="dark" class="peer sr-only" {% if settings.theme == 'dark' %}checked{% endif %}>
+                        <div class="p-4 border-2 transition-all duration-300 peer-checked:border-neon-yellow peer-checked:bg-gray-800 border-gray-600 hover:border-white bg-dark-bg h-full">
+                            <div class="font-mono font-bold text-white mb-1">CYBERPUNK DARK</div>
+                            <div class="text-xs text-gray-400 font-mono">High contrast, neon accents.</div>
+                            <div class="mt-2 flex gap-1">
+                                <div class="w-3 h-3 bg-[#FF005C]"></div>
+                                <div class="w-3 h-3 bg-[#F5FF00]"></div>
+                                <div class="w-3 h-3 bg-[#00F0FF]"></div>
+                            </div>
+                        </div>
+                        <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <i class="fas fa-check-circle text-neon-yellow"></i>
+                        </div>
+                    </label>
+                    
+                    <label class="relative cursor-pointer group">
+                        <input type="radio" name="theme" value="white" class="peer sr-only" {% if settings.theme == 'white' %}checked{% endif %}>
+                        <div class="p-4 border-2 transition-all duration-300 peer-checked:border-neon-yellow peer-checked:bg-gray-800 border-gray-600 hover:border-white bg-white h-full">
+                            <div class="font-mono font-bold text-black mb-1">MINIMALIST WHITE</div>
+                            <div class="text-xs text-gray-600 font-mono">Clean, spacious, light.</div>
+                            <div class="mt-2 flex gap-1">
+                                <div class="w-3 h-3 bg-black"></div>
+                                <div class="w-3 h-3 bg-gray-300"></div>
+                                <div class="w-3 h-3 bg-white border border-gray-300"></div>
+                            </div>
+                        </div>
+                        <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <i class="fas fa-check-circle text-black"></i>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-8">class="mb-6">
                 <label class="block text-gray-400 font-mono text-sm mb-2">
                     {% if current_lang == 'zh' %}博客名称{% else %}BLOG NAME{% endif %}
                 </label>

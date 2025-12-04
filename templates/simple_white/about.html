@@ -1,0 +1,35 @@
+{% extends 'simple_white/base.html' %}
+
+{% block title %}{% if current_lang == 'zh' %}关于{% else %}About{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white border border-gray-100 rounded-3xl p-8 md:p-16 shadow-xl relative overflow-hidden">
+        <!-- Decorative background text -->
+        <div class="absolute top-0 right-0 text-9xl font-bold text-gray-50 opacity-[0.03] -mr-12 -mt-8 select-none pointer-events-none font-mono">
+            {% if current_lang == 'zh' %}关于{% else %}ABOUT{% endif %}
+        </div>
+
+        <div class="relative z-10">
+            <div class="prose prose-lg max-w-none prose-headings:font-mono prose-a:text-black prose-a:no-underline prose-a:border-b prose-a:border-black hover:prose-a:text-gray-600 hover:prose-a:border-gray-400">
+                {{ content|safe }}
+            </div>
+            
+            {% if social_links %}
+            <div class="mt-16 pt-8 border-t border-gray-100">
+                <h3 class="text-sm font-bold font-mono text-gray-400 mb-6 uppercase tracking-widest">
+                    {% if current_lang == 'zh' %}联系方式{% else %}CONNECT{% endif %}
+                </h3>
+                <div class="flex gap-4 flex-wrap">
+                    {% for link in social_links %}
+                    <a href="{{ link.url }}" target="_blank" class="w-12 h-12 flex items-center justify-center border border-gray-200 hover:border-black hover:bg-black hover:text-white transition-all duration-300 rounded-full text-gray-600" title="{{ link.icon }}">
+                        <i class="{{ link.icon }} text-lg"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

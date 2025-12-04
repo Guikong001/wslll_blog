@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if site_settings.logo_filename %}
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/logo/' + site_settings.logo_filename) }}">
+    {% endif %}
+    <title>{% block title %}{{ site_settings.blog_name }}{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SimpleMDE -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'white-bg': '#ffffff',
+                        'light-gray': '#f3f4f6',
+                        'text-primary': '#111827',
+                        'text-secondary': '#4b5563',
+                        'accent': '#000000',
+                        'border-color': '#e5e7eb',
+                    },
+                    fontFamily: {
+                        'mono': ['"Space Mono"', 'monospace'],
+                        'sans': ['"Inter"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #111827;
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Space Mono', monospace;
+            letter-spacing: -0.02em;
+        }
+        .minimal-card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+        .minimal-card:hover {
+            border-color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #ffffff;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        /* Markdown Content Styles */
+        .prose { color: #374151; max-width: 65ch; }
+        .prose h1 { font-size: 2em; font-weight: 800; margin-bottom: 0.5em; color: #111827; }
+        .prose h2 { font-size: 1.5em; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; color: #111827; }
+        .prose p { margin-bottom: 1.25em; line-height: 1.75; }
+        .prose code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 4px; color: #111827; font-family: 'Space Mono', monospace; font-size: 0.9em; }
+        .prose pre { background-color: #f9fafb; padding: 1em; border-radius: 8px; overflow-x: auto; border: 1px solid #e5e7eb; margin-bottom: 1.5em; }
+        .prose pre code { background-color: transparent; color: #111827; padding: 0; }
+        .prose a { color: #000000; text-decoration: underline; text-underline-offset: 2px; font-weight: 500; }
+        .prose a:hover { color: #4b5563; }
+        .prose blockquote { border-left: 3px solid #000000; padding-left: 1em; font-style: italic; color: #4b5563; margin-bottom: 1.5em; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose img { max-width: 100%; border-radius: 8px; margin: 1.5em 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        
+        /* AI Chat Widget Minimal Style */
+        #ai-chat-window {
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-white">
+    <!-- Navbar -->
+    <nav class="border-b border-gray-200 bg-white/90 backdrop-blur-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center flex-wrap">
+            <a href="{{ url_for('index') }}" class="flex items-center gap-3 text-xl font-bold font-mono text-black hover:text-gray-600 transition-colors">
+                {% if site_settings.logo_filename %}
+                    <img src="{{ url_for('static', filename='uploads/logo/' + site_settings.logo_filename) }}" alt="Logo" class="h-8 w-8 object-contain">
+                {% endif %}
+                {{ site_settings.blog_name }}
+            </a>
+            <div class="space-x-4 md:space-x-8 font-mono text-sm md:text-base flex items-center mt-2 md:mt-0 text-gray-600">
+                <!-- Theme Toggle -->
+                <a href="{{ url_for('toggle_theme') }}" class="hover:text-black transition-colors" title="{% if current_lang == 'zh' %}切换主题{% else %}Toggle Theme{% endif %}">
+                    <i class="fas fa-adjust"></i>
+                </a>
+
+                <!-- Language Switch -->
+                <div class="flex border border-gray-200 rounded overflow-hidden">
+                    <a href="{{ url_for('set_lang', lang='zh') }}" class="px-3 py-1 {% if current_lang == 'zh' %}bg-black text-white font-medium{% else %}text-gray-500 hover:bg-gray-50{% endif %} transition-colors text-xs">中文</a>
+                    <a href="{{ url_for('set_lang', lang='en') }}" class="px-3 py-1 {% if current_lang == 'en' %}bg-black text-white font-medium{% else %}text-gray-500 hover:bg-gray-50{% endif %} transition-colors text-xs border-l border-gray-200">EN</a>
+                </div>
+
+                <a href="{{ url_for('index') }}" class="hover:text-black transition-colors font-medium">
+                    {% if current_lang == 'zh' %}首页{% else %}HOME{% endif %}
+                </a>
+                <a href="{{ url_for('gallery') }}" class="hover:text-black transition-colors font-medium">
+                    {% if current_lang == 'zh' %}影像{% else %}GALLERY{% endif %}
+                </a>
+                <a href="{{ url_for('about') }}" class="hover:text-black transition-colors font-medium">
+                    {% if current_lang == 'zh' %}关于{% else %}ABOUT{% endif %}
+                </a>
+                
+                {% if current_user.is_authenticated %}
+                    <div class="relative group inline-block py-4 -my-4">
+                        <button class="hover:text-black transition-colors flex items-center gap-1 font-medium">
+                            {% if current_lang == 'zh' %}管理{% else %}ADMIN{% endif %} <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="absolute right-0 top-full mt-0 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden group-hover:block p-1 z-50">
+                            <a href="{{ url_for('create_post') }}" class="block px-4 py-2 hover:bg-gray-50 text-gray-700 rounded-md transition-colors">
+                                {% if current_lang == 'zh' %}写文章{% else %}WRITE POST{% endif %}
+                            </a>
+                            <a href="{{ url_for('settings') }}" class="block px-4 py-2 hover:bg-gray-50 text-gray-700 rounded-md transition-colors">
+                                {% if current_lang == 'zh' %}设置{% else %}SETTINGS{% endif %}
+                            </a>
+                            <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-50 text-gray-700 rounded-md transition-colors">
+                                {% if current_lang == 'zh' %}退出{% else %}LOGOUT{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="hover:text-black transition-colors font-medium">
+                        {% if current_lang == 'zh' %}登录{% else %}LOGIN{% endif %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-12">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-8 max-w-2xl mx-auto">
+                    {% for message in messages %}
+                        <div class="bg-gray-50 text-gray-800 px-4 py-3 rounded border border-gray-200 shadow-sm mb-2 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-black"></i> {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 bg-white py-12 mt-12">
+        <div class="container mx-auto px-4 text-center font-mono text-gray-400 text-sm space-y-2">
+            <p>Designed By Gemini 3 Pro ｜ Deploy By Wslll</p>
+            <p>AI Powered By Deepseek-3.2 ｜ <a href="https://beian.miit.gov.cn/" target="_blank" class="hover:text-black transition-colors underline decoration-dotted">鄂ICP备2022015978号-4</a></p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('opacity-100');
+            
+            // Notification Logic
+            {% if global_notifications %}
+            const today = new Date().toISOString().split('T')[0];
+            const lastSeen = localStorage.getItem('last_notification_date');
+            
+            // Only show if not seen today
+            if (lastSeen !== today) {
+                const notifications = [
+                    {% for notice in global_notifications %}
+                    `{{ notice|safe|replace('`', '\\`') }}`,
+                    {% endfor %}
+                ];
+                
+                let currentNoticeIndex = 0;
+                const modal = document.getElementById('notification-modal');
+                const contentContainer = document.getElementById('notification-content');
+                const nextBtn = document.getElementById('notification-next-btn');
+                const closeBtn = document.getElementById('notification-close-btn');
+                
+                if (modal && notifications.length > 0) {
+                    
+                    function showNotice(index) {
+                        if (index < notifications.length) {
+                            contentContainer.innerHTML = `<div class="prose prose-sm text-gray-600">${notifications[index]}</div>`;
+                            modal.classList.remove('hidden');
+                            
+                            // Update button text based on whether it's the last notice
+                            if (index === notifications.length - 1) {
+                                nextBtn.innerText = "{% if current_lang == 'zh' %}收到{% else %}ACKNOWLEDGED{% endif %}";
+                                nextBtn.onclick = finishNotifications;
+                            } else {
+                                nextBtn.innerText = "{% if current_lang == 'zh' %}下一条{% else %}NEXT{% endif %}";
+                                nextBtn.onclick = () => showNotice(index + 1);
+                            }
+                        }
+                    }
+                    
+                    function finishNotifications() {
+                        modal.classList.add('hidden');
+                        localStorage.setItem('last_notification_date', today);
+                    }
+                    
+                    // Start showing first notice
+                    showNotice(0);
+                    
+                    // X button behavior
+                    closeBtn.onclick = finishNotifications; 
+                }
+            }
+            {% endif %}
+        });
+        
+        function closeNotification() {
+            document.getElementById('notification-modal').classList.add('hidden');
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+
+    <!-- AI Chat Widget -->
+    <div id="ai-chat-widget" class="fixed bottom-8 right-8 z-[90] font-mono">
+        <!-- Chat Button -->
+        <button id="ai-chat-btn" class="w-12 h-12 bg-black text-white rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center text-xl z-[91] relative group">
+            <i class="fas fa-robot"></i>
+            <span class="absolute right-full mr-3 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                {% if current_lang == 'zh' %}AI 助手{% else %}AI Assistant{% endif %}
+            </span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="ai-chat-window" class="hidden absolute bottom-16 right-0 w-80 md:w-96 bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col transition-all duration-300 origin-bottom-right transform scale-95 opacity-0 h-[500px] max-h-[80vh] overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gray-50 border-b border-gray-200 p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <h3 class="text-black font-bold text-sm tracking-wide">DEEPSEEK AI</h3>
+                </div>
+                <button id="ai-chat-close" class="text-gray-400 hover:text-black transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="ai-messages" class="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar bg-white">
+                <!-- Welcome Message -->
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-black flex-shrink-0 flex items-center justify-center text-white">
+                        <i class="fas fa-robot text-xs"></i>
+                    </div>
+                    <div class="bg-gray-100 p-3 text-sm text-gray-800 rounded-2xl rounded-tl-none max-w-[85%]">
+                        {% if current_lang == 'zh' %}
+                        你好！我是本站的 AI 助手。我可以基于博客内容回答你的问题。
+                        {% else %}
+                        Hello! I'm the AI assistant. I can answer questions based on this blog's content.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 border-t border-gray-100 bg-white">
+                <form id="ai-chat-form" class="flex gap-2">
+                    <input type="text" id="ai-input" 
+                        placeholder="{% if current_lang == 'zh' %}问点什么...{% else %}Ask something...{% endif %}" 
+                        class="flex-grow bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-sm text-gray-800 focus:border-black focus:ring-0 focus:outline-none transition-colors placeholder-gray-400"
+                        autocomplete="off">
+                    <button type="submit" class="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors">
+                        <i class="fas fa-arrow-up text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatBtn = document.getElementById('ai-chat-btn');
+            const chatWindow = document.getElementById('ai-chat-window');
+            const closeBtn = document.getElementById('ai-chat-close');
+            const chatForm = document.getElementById('ai-chat-form');
+            const chatInput = document.getElementById('ai-input');
+            const messagesContainer = document.getElementById('ai-messages');
+            
+            let chatHistory = []; // Store conversation history
+            let isOpen = false;
+
+            // Toggle Chat Window
+            function toggleChat() {
+                isOpen = !isOpen;
+                if (isOpen) {
+                    chatWindow.classList.remove('hidden');
+                    setTimeout(() => {
+                        chatWindow.classList.remove('scale-95', 'opacity-0');
+                        chatWindow.classList.add('scale-100', 'opacity-100');
+                    }, 10);
+                    chatInput.focus();
+                } else {
+                    chatWindow.classList.remove('scale-100', 'opacity-100');
+                    chatWindow.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => {
+                        chatWindow.classList.add('hidden');
+                    }, 300);
+                }
+            }
+
+            chatBtn.addEventListener('click', toggleChat);
+            closeBtn.addEventListener('click', toggleChat);
+
+            // Handle Form Submit
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = chatInput.value.trim();
+                if (!message) return;
+
+                // Add User Message
+                appendMessage('user', message);
+                chatInput.value = '';
+                
+                // Add Loading Message
+                const loadingId = appendLoading();
+
+                try {
+                    // Send to API
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            message: message,
+                            history: chatHistory 
+                        })
+                    });
+
+                    if (!response.ok) throw new Error('API Error');
+
+                    // Remove loading
+                    removeMessage(loadingId);
+                    
+                    // Create AI Message Container
+                    const aiMsgId = appendMessage('ai', '');
+                    const aiMsgElement = document.getElementById(aiMsgId).querySelector('.markdown-content');
+                    
+                    // Stream response
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let aiText = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        const chunk = decoder.decode(value, { stream: true });
+                        aiText += chunk;
+                        aiMsgElement.innerHTML = marked.parse(aiText);
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                    
+                    // Update history
+                    chatHistory.push({ role: "user", content: message });
+                    chatHistory.push({ role: "assistant", content: aiText });
+
+                } catch (error) {
+                    console.error(error);
+                    removeMessage(loadingId);
+                    appendMessage('ai', isZh ? '抱歉，我遇到了一些问题。' : 'Sorry, I encountered an error.');
+                }
+            });
+
+            function appendMessage(role, text) {
+                const id = 'msg-' + Date.now();
+                const div = document.createElement('div');
+                div.id = id;
+                div.className = 'flex gap-3 ' + (role === 'user' ? 'flex-row-reverse' : '');
+                
+                const avatar = role === 'user' 
+                    ? `<div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center text-gray-600"><i class="fas fa-user text-xs"></i></div>`
+                    : `<div class="w-8 h-8 rounded-full bg-black flex-shrink-0 flex items-center justify-center text-white"><i class="fas fa-robot text-xs"></i></div>`;
+                
+                const bubbleClass = role === 'user'
+                    ? 'bg-black text-white rounded-2xl rounded-tr-none'
+                    : 'bg-gray-100 text-gray-800 rounded-2xl rounded-tl-none';
+                
+                div.innerHTML = `
+                    ${avatar}
+                    <div class="${bubbleClass} p-3 text-sm shadow-sm max-w-[85%] markdown-content">
+                        ${role === 'ai' ? marked.parse(text) : text}
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(div);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                return id;
+            }
+
+            function appendLoading() {
+                const id = 'loading-' + Date.now();
+                const div = document.createElement('div');
+                div.id = id;
+                div.className = 'flex gap-3';
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-black flex-shrink-0 flex items-center justify-center text-white"><i class="fas fa-robot text-xs"></i></div>
+                    <div class="bg-gray-100 p-3 rounded-2xl rounded-tl-none flex items-center gap-1">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                    </div>
+                `;
+                messagesContainer.appendChild(div);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                return id;
+            }
+
+            function removeMessage(id) {
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            }
+            
+            const isZh = {{ 'true' if current_lang == 'zh' else 'false' }};
+        });
+    </script>
+</body>
+</html>
+
+<!-- Global Notification Modal -->
+{% if global_notifications %}
+<div id="notification-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+    <div class="bg-white border border-gray-200 rounded-2xl p-8 max-w-lg w-full shadow-2xl relative animate-fade-in-up">
+        <button id="notification-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+        
+        <h2 class="text-xl font-bold font-mono mb-6 text-black flex items-center">
+            <i class="fas fa-bell mr-3"></i>
+            {% if current_lang == 'zh' %}系统通知{% else %}SYSTEM NOTICE{% endif %}
+        </h2>
+        
+        <div id="notification-content" class="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+            <!-- Content injected via JS -->
+        </div>
+        
+        <div class="mt-8 text-center">
+            <button id="notification-next-btn" class="bg-black text-white font-medium px-8 py-2 rounded-full hover:bg-gray-800 transition-all shadow-md text-sm tracking-wide">
+                <!-- Text injected via JS -->
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}

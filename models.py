@@ -7,19 +7,26 @@ db = SQLAlchemy()
 
 class SiteSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    blog_name = db.Column(db.String(100), default="Wslll Blog")
-    logo_filename = db.Column(db.String(100), nullable=True)
-    about_content = db.Column(db.Text, default="# About Me\n\nHi, I'm a photographer and developer.")
-    about_content_en = db.Column(db.Text, nullable=True) # English Translation
-    social_links = db.Column(db.Text, default='[{"icon": "fab fa-github", "url": "#"}, {"icon": "fab fa-twitter", "url": "#"}, {"icon": "fas fa-envelope", "url": "#"}]')
+    blog_name = db.Column(db.String(100), default="My Blog")
+    about_content = db.Column(db.Text, nullable=True)
+    about_content_en = db.Column(db.Text, nullable=True)
+    social_links = db.Column(db.Text, default="[]") # JSON string
+    logo_filename = db.Column(db.String(200), nullable=True)
     deepseek_api_key = db.Column(db.String(200), nullable=True)
     notification_content = db.Column(db.Text, nullable=True) # Global Notification Content
+    theme = db.Column(db.String(20), default='dark') # 'dark' or 'white'
 
     def get_social_links(self):
         try:
             return json.loads(self.social_links)
         except:
             return []
+
+class OTP(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    phone = db.Column(db.String(20), index=True)
+    code = db.Column(db.String(10))
+    timestamp = db.Column(db.Float)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)

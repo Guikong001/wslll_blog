@@ -97,6 +97,11 @@
                 &lt;{{ site_settings.blog_name }}&gt;
             </a>
             <div class="space-x-4 md:space-x-6 font-mono text-sm md:text-base flex items-center mt-2 md:mt-0">
+                <!-- Theme Toggle -->
+                <a href="{{ url_for('toggle_theme') }}" class="hover:text-white transition-colors" title="{% if current_lang == 'zh' %}切换主题{% else %}Toggle Theme{% endif %}">
+                    <i class="fas fa-adjust"></i>
+                </a>
+
                 <!-- Language Switch -->
                 <div class="flex border border-gray-600">
                     <a href="{{ url_for('set_lang', lang='zh') }}" class="px-2 py-1 {% if current_lang == 'zh' %}bg-neon-yellow text-black font-bold{% else %}text-gray-400 hover:text-white{% endif %} transition-colors text-xs">中文</a>
@@ -114,11 +119,11 @@
                 </a>
                 
                 {% if current_user.is_authenticated %}
-                    <div class="relative group inline-block">
+                    <div class="relative group inline-block py-4 -my-4">
                         <button class="hover:text-neon-yellow transition-colors flex items-center gap-1">
                             {% if current_lang == 'zh' %}管理{% else %}ADMIN{% endif %} <i class="fas fa-chevron-down text-xs"></i>
                         </button>
-                        <div class="absolute right-0 mt-2 w-48 bg-card-bg border-2 border-white shadow-neo-pink hidden group-hover:block p-2 z-50">
+                        <div class="absolute right-0 top-full mt-0 w-48 bg-card-bg border-2 border-white shadow-neo-pink hidden group-hover:block p-2 z-50">
                             <a href="{{ url_for('create_post') }}" class="block px-4 py-2 hover:bg-neon-pink hover:text-black transition-colors">
                                 {% if current_lang == 'zh' %}写文章{% else %}WRITE POST{% endif %}
                             </a>

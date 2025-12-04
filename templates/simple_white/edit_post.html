@@ -1,50 +1,50 @@
-{% extends 'base.html' %}
+{% extends 'simple_white/base.html' %}
 
-{% block title %}{% if post %}{% if current_lang == 'zh' %}编辑文章{% else %}Edit Protocol{% endif %}{% else %}{% if current_lang == 'zh' %}新建文章{% else %}New Protocol{% endif %}{% endif %}{% endblock %}
+{% block title %}{% if post %}{% if current_lang == 'zh' %}编辑文章{% else %}Edit Post{% endif %}{% else %}{% if current_lang == 'zh' %}新建文章{% else %}New Post{% endif %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
-    <div class="bg-card-bg border-2 border-white p-6 md:p-8 shadow-neo">
-        <h2 class="text-2xl font-bold font-mono mb-6 text-neon-yellow">
+    <div class="bg-white border border-gray-200 rounded-3xl p-10 shadow-xl">
+        <h2 class="text-3xl font-bold font-mono mb-10 text-black tracking-tight">
             {% if post %}
-                {% if current_lang == 'zh' %}编辑文章{% else %}RE: WRITE PROTOCOL{% endif %}
+                {% if current_lang == 'zh' %}编辑文章{% else %}EDIT POST{% endif %}
             {% else %}
-                {% if current_lang == 'zh' %}新建文章{% else %}INIT: NEW PROTOCOL{% endif %}
+                {% if current_lang == 'zh' %}新建文章{% else %}NEW POST{% endif %}
             {% endif %}
         </h2>
         
         <form method="POST">
-            <div class="mb-6">
-                <label class="block text-gray-400 font-mono text-sm mb-2">
+            <div class="mb-8">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
                     {% if current_lang == 'zh' %}标题{% else %}TITLE{% endif %}
                 </label>
                 <input type="text" name="title" placeholder="{% if current_lang == 'zh' %}输入标题...{% else %}ENTER TITLE...{% endif %}" required value="{{ post.title if post else '' }}"
-                    class="w-full bg-dark-bg border-2 border-gray-700 p-4 text-xl font-bold text-white focus:border-neon-yellow focus:outline-none font-mono transition-colors placeholder-gray-600">
+                    class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-xl font-bold text-black focus:border-black focus:ring-0 focus:outline-none font-mono transition-colors placeholder-gray-400">
             </div>
             
-            <div class="mb-6 grid md:grid-cols-2 gap-6">
+            <div class="mb-8 grid md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-gray-400 font-mono text-sm mb-2">
+                    <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
                         {% if current_lang == 'zh' %}作者 (可选){% else %}AUTHOR (OPTIONAL){% endif %}
                     </label>
                     <input type="text" name="custom_author" value="{{ post.custom_author if post and post.custom_author else '' }}" placeholder="{{ current_user.username }}"
-                        class="w-full bg-dark-bg border-2 border-gray-700 p-3 text-white focus:border-neon-yellow focus:outline-none font-mono">
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono">
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-mono text-sm mb-2">
+                    <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
                         {% if current_lang == 'zh' %}发布时间{% else %}PUBLISH DATE{% endif %}
                     </label>
                     <input type="datetime-local" name="created_at" value="{{ post.created_at.strftime('%Y-%m-%dT%H:%M') if post else '' }}"
-                        class="w-full bg-dark-bg border-2 border-gray-700 p-3 text-white focus:border-neon-blue focus:outline-none font-mono transition-colors">
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono transition-colors">
                 </div>
             </div>
 
-            <div class="mb-6 grid md:grid-cols-2 gap-6">
+            <div class="mb-8 grid md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-gray-400 font-mono text-sm mb-2">
+                    <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
                         {% if current_lang == 'zh' %}分类{% else %}CATEGORY{% endif %}
                     </label>
-                    <select name="category_id" class="w-full bg-dark-bg border-2 border-gray-700 p-3 text-white focus:border-neon-yellow focus:outline-none font-mono">
+                    <select name="category_id" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono">
                         <option value="">{% if current_lang == 'zh' %}-- 选择分类 --{% else %}-- SELECT CATEGORY --{% endif %}</option>
                         {% for cat in categories %}
                         <option value="{{ cat.id }}" {% if post and post.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
@@ -52,30 +52,30 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-400 font-mono text-sm mb-2">
+                    <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
                         {% if current_lang == 'zh' %}或创建新分类{% else %}OR CREATE NEW CATEGORY{% endif %}
                     </label>
                     <input type="text" name="new_category" placeholder="{% if current_lang == 'zh' %}新分类名称{% else %}NEW CATEGORY NAME{% endif %}"
-                        class="w-full bg-dark-bg border-2 border-gray-700 p-3 text-white focus:border-neon-blue focus:outline-none font-mono transition-colors">
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono transition-colors">
                 </div>
             </div>
             
-            <div class="mb-6 prose-editor">
-                <label class="block text-gray-400 font-mono text-sm mb-2">
+            <div class="mb-10 prose-editor">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
                     {% if current_lang == 'zh' %}内容{% else %}CONTENT{% endif %}
                 </label>
                 <textarea name="content" id="markdown-editor">{{ post.content if post else '' }}</textarea>
             </div>
             
             <div class="flex justify-end space-x-4">
-                <a href="{{ url_for('index') }}" class="px-6 py-3 border border-gray-600 text-gray-400 hover:text-white hover:border-white transition-colors font-mono font-bold">
-                    {% if current_lang == 'zh' %}取消{% else %}ABORT{% endif %}
+                <a href="{{ url_for('index') }}" class="px-6 py-3 border border-gray-200 rounded-xl text-gray-500 hover:text-black hover:border-black transition-colors font-mono font-bold text-sm">
+                    {% if current_lang == 'zh' %}取消{% else %}CANCEL{% endif %}
                 </a>
-                <button type="submit" class="px-8 py-3 bg-neon-blue text-black font-bold border-2 border-transparent hover:bg-white hover:border-neon-blue transition-all duration-300 font-mono shadow-lg">
+                <button type="submit" class="px-8 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-all duration-300 font-mono shadow-lg text-sm tracking-widest">
                     {% if post %}
-                        {% if current_lang == 'zh' %}更新{% else %}UPDATE SYSTEM{% endif %}
+                        {% if current_lang == 'zh' %}更新{% else %}UPDATE{% endif %}
                     {% else %}
-                        {% if current_lang == 'zh' %}发布{% else %}DEPLOY{% endif %}
+                        {% if current_lang == 'zh' %}发布{% else %}PUBLISH{% endif %}
                     {% endif %}
                 </button>
             </div>

@@ -11,21 +11,96 @@ import threading
 import uuid
 from datetime import timedelta, datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, send_from_directory, jsonify, session, Response, stream_with_context
+import jinja2
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from models import db, User, Post, Category, Photo, SiteSetting
+from models import db, User, Post, Category, Photo, SiteSetting, OTP
 import markdown
 from openai import OpenAI
 
 app = Flask(__name__)
+
+# Configure Jinja2 to look in default template directory
+# We will rely on subdirectories 'code_black', 'simple_white', and 'templates_optional' for switching
+app.jinja_loader = jinja2.ChoiceLoader([
+    jinja2.FileSystemLoader(os.path.join(app.root_path, 'templates')),
+    jinja2.PrefixLoader({
+        'opt': jinja2.FileSystemLoader(os.path.join(app.root_path, 'templates_optional'))
+    })
+])
 # change the secret key to a random string, you can use "openssl rand -hex 32"
-app.config['SECRET_KEY'] = 'your_secret_key_here'
+#app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your_secret_key_here')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14) # 14 days login session
+
+# Define template folder based on theme is handled dynamically, but Flask needs a default
+# We will override render_template behavior or pass the correct folder
+# Simpler approach: Override flask's template folder path per request or use a helper
+
+def get_template_path(template_name):
+    """
+    Returns the correct template path based on current theme.
+    Strategy:
+    - Check session['theme'] first.
+    - Fallback to SiteSetting.theme.
+    - Default to 'code_black'.
+    """
+    theme = session.get('theme')
+    
+    if not theme:
+        settings = SiteSetting.query.first()
+        if settings and settings.theme:
+            # Map old values if necessary, or assume they match folder names
+            # Old values: 'dark', 'white'
+            # New folder names: 'code_black', 'simple_white'
+            if settings.theme == 'dark':
+                theme = 'code_black'
+            elif settings.theme == 'white':
+                theme = 'simple_white'
+            else:
+                theme = settings.theme
+        else:
+            theme = 'code_black'
+            
+    # Ensure theme is one of the supported ones or optional
+    # For now, we assume theme name matches folder name in templates/
+    # If it starts with opt/, it's in templates_optional
+    
+    if theme == 'code_black':
+        return f"code_black/{template_name}"
+    elif theme == 'simple_white':
+        return f"simple_white/{template_name}"
+    else:
+        # Assume future templates are passed as "opt/theme_name" or similar
+        # But for now, let's just fallback to code_black if unknown
+        return f"code_black/{template_name}"
+
+@app.route('/toggle-theme')
+def toggle_theme():
+    current_theme = session.get('theme')
+    # Check SiteSetting if session is empty
+    if not current_theme:
+        settings = SiteSetting.query.first()
+        if settings and settings.theme == 'white':
+            current_theme = 'simple_white'
+        else:
+            current_theme = 'code_black'
+            
+    if current_theme == 'simple_white':
+        session['theme'] = 'code_black'
+    else:
+        session['theme'] = 'simple_white'
+        
+    return redirect(request.referrer or url_for('index'))
+
+# # DeepSeek Configuration
+# DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
+# DEEPSEEK_API_KEY = 'use_your_own_key'
 
 # DeepSeek Configuration
 DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
@@ -43,10 +118,15 @@ def get_deepseek_key():
     # Fallback to hardcoded (or env var)
     return DEEPSEEK_API_KEY
 
+# # Configuration for SMS Login
+# ALLOWED_PHONE = 'use_your_own_phone'
+# Spug_SMS_Template_Code = 'use_your_own_Spug_template_code'
+# OTP_STORE = {} # Format: {phone: {'code': '123456', 'timestamp': 1234567890}}
+
 # Configuration for SMS Login
 ALLOWED_PHONE = 'use_your_own_phone'
 Spug_SMS_Template_Code = 'use_your_own_Spug_template_code'
-OTP_STORE = {} # Format: {phone: {'code': '123456', 'timestamp': 1234567890}}
+# OTP_STORE = {} # Removed in favor of DB storage
 
 db.init_app(app)
 
@@ -307,7 +387,7 @@ def index():
     else:
         posts = Post.query.order_by(Post.created_at.desc()).all()
         active_category = None
-    return render_template('index.html', posts=posts, active_category=active_category)
+    return render_template(get_template_path('index.html'), posts=posts, active_category=active_category)
 
 @app.route('/post/<int:post_id>')
 def post(post_id):
@@ -323,7 +403,7 @@ def post(post_id):
         post.display_title = post.title
         
     post.html_content = markdown.markdown(content_to_render, extensions=['fenced_code', 'codehilite'])
-    return render_template('post.html', post=post)
+    return render_template(get_template_path('post.html'), post=post)
 
 @app.route('/about')
 def about():
@@ -342,12 +422,12 @@ def about():
         content = markdown.markdown(content_to_render, extensions=['fenced_code', 'codehilite'])
         social_links = settings.get_social_links()
         
-    return render_template('about.html', content=content, social_links=social_links)
+    return render_template(get_template_path('about.html'), content=content, social_links=social_links)
 
 @app.route('/gallery')
 def gallery():
     photos = Photo.query.order_by(Photo.created_at.desc()).all()
-    return render_template('gallery.html', photos=photos)
+    return render_template(get_template_path('gallery.html'), photos=photos)
 
 @app.route('/send-code', methods=['POST'])
 def send_code():
@@ -363,11 +443,16 @@ def send_code():
     # Generate 6-digit code
     code = ''.join(random.choices(string.digits, k=6))
     
-    # Store code with timestamp
-    OTP_STORE[phone] = {
-        'code': code,
-        'timestamp': time.time()
-    }
+    # Store code with timestamp in DB
+    otp_entry = OTP.query.filter_by(phone=phone).first()
+    if otp_entry:
+        otp_entry.code = code
+        otp_entry.timestamp = time.time()
+    else:
+        otp_entry = OTP(phone=phone, code=code, timestamp=time.time())
+        db.session.add(otp_entry)
+    
+    db.session.commit()
     
     # Send SMS
     if send_sms_code(phone, code):
@@ -386,21 +471,30 @@ def login():
         
         if phone != ALLOWED_PHONE:
             flash('Unauthorized phone number.')
-            return render_template('login.html')
+            return render_template(get_template_path('login.html'))
             
-        stored_data = OTP_STORE.get(phone)
+        otp_entry = OTP.query.filter_by(phone=phone).first()
         
-        if not stored_data:
+        # Debug logging
+        print(f"Login Attempt: Phone={phone}, Input Code={code}")
+        if otp_entry:
+            print(f"Stored Data for {phone}: Code={otp_entry.code}, Timestamp={otp_entry.timestamp}")
+            print(f"Current Time: {time.time()}, Diff: {time.time() - otp_entry.timestamp}")
+        else:
+            print(f"Stored Data for {phone}: None")
+        
+        if not otp_entry:
             flash('No code requested or code expired.')
-            return render_template('login.html')
+            return render_template(get_template_path('login.html'))
             
         # Check expiration (e.g., 5 minutes)
-        if time.time() - stored_data['timestamp'] > 300:
-            del OTP_STORE[phone]
+        if time.time() - otp_entry.timestamp > 300:
+            db.session.delete(otp_entry)
+            db.session.commit()
             flash('Code expired. Please request a new one.')
-            return render_template('login.html')
+            return render_template(get_template_path('login.html'))
             
-        if stored_data['code'] == code:
+        if otp_entry.code == code:
             # Success! Log in the admin user
             # We assume the admin user is ID 1.
             user = User.query.get(1)
@@ -411,12 +505,13 @@ def login():
                 db.session.commit()
             
             login_user(user, remember=True) # 14 days handled by PERMANENT_SESSION_LIFETIME
-            del OTP_STORE[phone] # Invalidate code
+            db.session.delete(otp_entry) # Invalidate code
+            db.session.commit()
             return redirect(url_for('index'))
         else:
             flash('Invalid verification code.')
             
-    return render_template('login.html')
+    return render_template(get_template_path('login.html'))
 
 @app.route('/logout')
 @login_required
@@ -485,7 +580,7 @@ def create_post():
         return redirect(url_for('index'))
     
     categories = Category.query.all()
-    return render_template('edit_post.html', post=None, categories=categories)
+    return render_template(get_template_path('edit_post.html'), post=None, categories=categories)
 
 @app.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required
@@ -539,7 +634,7 @@ def edit_post(post_id):
         return redirect(url_for('post', post_id=post.id))
         
     categories = Category.query.all()
-    return render_template('edit_post.html', post=post, categories=categories)
+    return render_template(get_template_path('edit_post.html'), post=post, categories=categories)
 
 @app.route('/delete/<int:post_id>', methods=['POST'])
 @login_required
@@ -553,6 +648,11 @@ def delete_post(post_id):
 @login_required
 def settings():
     site_settings = SiteSetting.query.first()
+    if not site_settings:
+        site_settings = SiteSetting(blog_name="Wslll Blog")
+        db.session.add(site_settings)
+        db.session.commit()
+        
     if request.method == 'POST':
         site_settings.blog_name = request.form.get('blog_name')
         site_settings.about_content = request.form.get('about_content')
@@ -562,6 +662,11 @@ def settings():
         new_key = request.form.get('deepseek_api_key')
         if new_key:
             site_settings.deepseek_api_key = new_key
+            
+        # Update Theme
+        theme = request.form.get('theme')
+        if theme:
+            site_settings.theme = theme
         
         # Auto Translate About Content
         # site_settings.about_content_en = translate_text(site_settings.about_content)
@@ -594,7 +699,7 @@ def settings():
 
         flash('Settings updated. AI translation for About Me is running in background.')
         return redirect(url_for('settings'))
-    return render_template('settings.html', settings=site_settings)
+    return render_template(get_template_path('settings.html'), settings=site_settings)
 
 @app.route('/gallery/upload', methods=['POST'])
 @login_required

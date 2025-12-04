@@ -1,0 +1,158 @@
+{% extends 'simple_white/base.html' %}
+
+{% block title %}{% if current_lang == 'zh' %}设置{% else %}Settings{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white border border-gray-200 rounded-3xl p-10 shadow-xl">
+        <h2 class="text-3xl font-bold font-mono mb-10 text-black tracking-tight">
+            {% if current_lang == 'zh' %}设置{% else %}SETTINGS{% endif %}
+        </h2>
+        
+        <form method="POST" enctype="multipart/form-data">
+            
+            <!-- Theme Selection -->
+            <div class="mb-10 pb-10 border-b border-gray-100">
+                <h3 class="text-xl font-bold font-mono mb-6 text-black">
+                    {% if current_lang == 'zh' %}主题设置{% else %}THEME SETTINGS{% endif %}
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <label class="relative cursor-pointer group">
+                        <input type="radio" name="theme" value="dark" class="peer sr-only" {% if settings.theme == 'dark' %}checked{% endif %}>
+                        <div class="p-6 rounded-xl border-2 transition-all duration-300 peer-checked:border-black peer-checked:bg-gray-50 border-gray-200 hover:border-gray-400 bg-black text-white h-full">
+                            <div class="font-mono font-bold mb-2">CYBERPUNK DARK</div>
+                            <div class="text-xs text-gray-400 font-mono">High contrast, neon accents, dark mode aesthetics.</div>
+                            <div class="mt-4 flex gap-2">
+                                <div class="w-4 h-4 rounded-full bg-[#FF005C]"></div>
+                                <div class="w-4 h-4 rounded-full bg-[#F5FF00]"></div>
+                                <div class="w-4 h-4 rounded-full bg-[#00F0FF]"></div>
+                            </div>
+                        </div>
+                        <div class="absolute top-4 right-4 opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <i class="fas fa-check-circle text-white text-xl"></i>
+                        </div>
+                    </label>
+                    
+                    <label class="relative cursor-pointer group">
+                        <input type="radio" name="theme" value="white" class="peer sr-only" {% if settings.theme == 'white' %}checked{% endif %}>
+                        <div class="p-6 rounded-xl border-2 transition-all duration-300 peer-checked:border-black peer-checked:bg-gray-50 border-gray-200 hover:border-gray-400 bg-white text-black h-full">
+                            <div class="font-mono font-bold mb-2">MINIMALIST WHITE</div>
+                            <div class="text-xs text-gray-500 font-mono">Clean, spacious, typography-focused, light mode.</div>
+                            <div class="mt-4 flex gap-2">
+                                <div class="w-4 h-4 rounded-full bg-black"></div>
+                                <div class="w-4 h-4 rounded-full bg-gray-200"></div>
+                                <div class="w-4 h-4 rounded-full bg-white border border-gray-200"></div>
+                            </div>
+                        </div>
+                        <div class="absolute top-4 right-4 opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <i class="fas fa-check-circle text-black text-xl"></i>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}博客名称{% else %}BLOG NAME{% endif %}
+                </label>
+                <input type="text" name="blog_name" value="{{ settings.blog_name }}"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono transition-colors">
+            </div>
+            
+            <div class="mb-8">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}LOGO (上传覆盖){% else %}LOGO (UPLOAD TO REPLACE){% endif %}
+                </label>
+                <div class="flex items-center gap-4">
+                    {% if settings.logo_filename %}
+                    <img src="{{ url_for('static', filename='uploads/logo/' + settings.logo_filename) }}" class="h-12 w-12 object-contain border border-gray-200 rounded bg-gray-50">
+                    {% endif %}
+                    <input type="file" name="logo" accept="image/*"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-700 font-mono file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800">
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}DeepSeek API 密钥{% else %}DEEPSEEK API KEY{% endif %}
+                </label>
+                <input type="password" name="deepseek_api_key" value="{{ settings.deepseek_api_key if settings.deepseek_api_key else '' }}" placeholder="sk-..."
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono transition-colors">
+            </div>
+
+            <div class="mb-8">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}全局通知内容 (支持 HTML/Markdown){% else %}GLOBAL NOTIFICATION CONTENT{% endif %}
+                </label>
+                <p class="text-xs text-gray-400 mb-2 font-mono">
+                    {% if current_lang == 'zh' %}使用 <code>&lt;notice&gt;内容&lt;/notice&gt;</code> 分隔多条通知。{% else %}Use <code>&lt;notice&gt;content&lt;/notice&gt;</code> to separate multiple notifications.{% endif %}
+                </p>
+                <textarea name="notification_content" rows="4"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono transition-colors">{{ settings.notification_content if settings.notification_content else '' }}</textarea>
+            </div>
+
+            <div class="mb-8">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}关于我 (MARKDOWN){% else %}ABOUT ME (MARKDOWN){% endif %}
+                </label>
+                <textarea name="about_content" id="about-editor" rows="10"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono transition-colors">{{ settings.about_content }}</textarea>
+            </div>
+
+            <div class="mb-10">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}社交链接{% else %}SOCIAL LINKS{% endif %}
+                </label>
+                <div id="social-links-container">
+                    {% for link in settings.get_social_links() %}
+                    <div class="flex gap-2 mb-2 social-row">
+                        <input type="text" name="social_icon[]" placeholder="Icon (e.g., fab fa-github)" value="{{ link.icon }}"
+                            class="w-1/3 bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono text-sm">
+                        <input type="text" name="social_url[]" placeholder="URL" value="{{ link.url }}"
+                            class="w-2/3 bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono text-sm">
+                        <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 text-white px-4 rounded-lg hover:bg-red-600 font-mono transition-colors">X</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-link-btn" class="mt-2 text-sm text-black font-bold font-mono border border-black rounded-full px-4 py-2 hover:bg-black hover:text-white transition-colors">
+                    + {% if current_lang == 'zh' %}添加链接{% else %}ADD LINK{% endif %}
+                </button>
+                <p class="text-xs text-gray-400 mt-3 font-mono">
+                    Icons use FontAwesome classes (e.g., <code>fab fa-github</code>, <code>fab fa-twitter</code>, <code>fas fa-envelope</code>, <code>fab fa-weixin</code>).
+                    <a href="https://fontawesome.com/search?m=free" target="_blank" class="text-black underline">Search Icons</a>
+                </p>
+            </div>
+            
+            <button type="submit" class="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-all duration-300 font-mono shadow-lg text-sm tracking-widest">
+                {% if current_lang == 'zh' %}保存更改{% else %}SAVE CHANGES{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var simplemde = new SimpleMDE({ 
+        element: document.getElementById("about-editor"),
+        spellChecker: false,
+        status: false,
+        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "link", "preview"],
+    });
+
+    document.getElementById('add-link-btn').addEventListener('click', function() {
+        const container = document.getElementById('social-links-container');
+        const div = document.createElement('div');
+        div.className = 'flex gap-2 mb-2 social-row';
+        div.innerHTML = `
+            <input type="text" name="social_icon[]" placeholder="Icon (e.g., fab fa-github)"
+                class="w-1/3 bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono text-sm">
+            <input type="text" name="social_url[]" placeholder="URL"
+                class="w-2/3 bg-gray-50 border border-gray-200 rounded-lg p-3 text-black focus:border-black focus:ring-0 focus:outline-none font-mono text-sm">
+            <button type="button" onclick="this.parentElement.remove()" class="bg-red-500 text-white px-4 rounded-lg hover:bg-red-600 font-mono transition-colors">X</button>
+        `;
+        container.appendChild(div);
+    });
+</script>
+{% endblock %}

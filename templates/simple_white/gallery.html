@@ -1,0 +1,115 @@
+{% extends 'simple_white/base.html' %}
+
+{% block title %}{% if current_lang == 'zh' %}影像{% else %}Gallery{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="flex justify-between items-end mb-12 pb-4 border-b border-gray-100">
+        <h1 class="text-4xl md:text-5xl font-bold font-mono text-black tracking-tight">
+            {% if current_lang == 'zh' %}影像记录{% else %}VISUAL LOGS{% endif %}
+        </h1>
+        {% if current_user.is_authenticated %}
+        <button onclick="document.getElementById('upload-modal').classList.remove('hidden')" 
+           class="px-6 py-2 bg-black text-white font-bold font-mono rounded-full hover:bg-gray-800 transition-colors text-sm">
+           {% if current_lang == 'zh' %}上传{% else %}UPLOAD{% endif %}
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+        {% for photo in photos %}
+        <div class="break-inside-avoid bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group relative">
+            <div class="overflow-hidden">
+                <img src="{{ url_for('static', filename='uploads/photos/' + photo.filename) }}" 
+                     alt="{{ photo.title }}" 
+                     class="w-full h-auto block transition-transform duration-700 group-hover:scale-105 cursor-zoom-in"
+                     onclick="openLightbox(this.src)">
+            </div>
+            
+            <div class="p-6">
+                {% if current_lang == 'en' and photo.title_en %}
+                    <h3 class="font-bold font-mono text-lg text-black mb-2">{{ photo.title_en }}</h3>
+                {% elif photo.title %}
+                    <h3 class="font-bold font-mono text-lg text-black mb-2">{{ photo.title }}</h3>
+                {% endif %}
+
+                {% if current_lang == 'en' and photo.description_en %}
+                    <p class="text-gray-500 text-sm font-mono leading-relaxed">{{ photo.description_en }}</p>
+                {% elif photo.description %}
+                    <p class="text-gray-500 text-sm font-mono leading-relaxed">{{ photo.description }}</p>
+                {% endif %}
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <form action="{{ url_for('delete_photo', photo_id=photo.id) }}" method="POST" class="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button type="submit" class="bg-white/90 backdrop-blur text-red-500 p-3 rounded-full hover:bg-red-500 hover:text-white shadow-lg transition-colors" onclick="return confirm('{% if current_lang == 'zh' %}删除这张照片？{% else %}Delete this photo?{% endif %}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-gray-400 font-mono col-span-full text-center py-32 border border-dashed border-gray-200 rounded-3xl bg-gray-50/50">
+            {% if current_lang == 'zh' %}暂无影像数据。{% else %}No visual data available.{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="upload-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative transform transition-all">
+        <button onclick="document.getElementById('upload-modal').classList.add('hidden')" class="absolute top-6 right-6 text-gray-400 hover:text-black transition-colors">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+        
+        <h2 class="text-2xl font-bold font-mono mb-8 text-black">
+            {% if current_lang == 'zh' %}上传影像{% else %}UPLOAD VISUAL{% endif %}
+        </h2>
+        
+        <form action="{{ url_for('upload_photo') }}" method="POST" enctype="multipart/form-data">
+            <div class="mb-6">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}文件{% else %}FILE{% endif %}
+                </label>
+                <input type="file" name="photo" required accept="image/*"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-700 font-mono file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800">
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}标题 (可选){% else %}TITLE (OPTIONAL){% endif %}
+                </label>
+                <input type="text" name="title"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black font-mono focus:border-black focus:ring-0 focus:outline-none transition-colors">
+            </div>
+            
+            <div class="mb-8">
+                <label class="block text-gray-500 font-mono text-xs font-bold mb-2 uppercase tracking-wider">
+                    {% if current_lang == 'zh' %}描述 (可选){% else %}DESCRIPTION (OPTIONAL){% endif %}
+                </label>
+                <textarea name="description" rows="3"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-black font-mono focus:border-black focus:ring-0 focus:outline-none transition-colors"></textarea>
+            </div>
+            
+            <button type="submit" class="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-all duration-300 font-mono shadow-lg text-sm tracking-widest">
+                {% if current_lang == 'zh' %}开始上传{% else %}UPLOAD{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="fixed inset-0 bg-black/95 hidden z-[60] flex items-center justify-center p-4 cursor-zoom-out" onclick="this.classList.add('hidden')">
+    <img id="lightbox-img" src="" class="max-w-full max-h-full object-contain shadow-2xl rounded-sm">
+</div>
+
+<script>
+    function openLightbox(src) {
+        const lightbox = document.getElementById('lightbox');
+        const img = document.getElementById('lightbox-img');
+        img.src = src;
+        lightbox.classList.remove('hidden');
+    }
+</script>
+{% endblock %}

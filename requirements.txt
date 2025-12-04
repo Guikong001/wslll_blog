@@ -6,3 +6,5 @@ email_validator
 Markdown
 requests
 openai
+gunicorn
+gevent

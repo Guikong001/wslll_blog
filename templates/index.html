@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-12 text-center">
+        <h1 class="text-4xl md:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-neon-pink via-neon-yellow to-neon-blue animate-pulse">
+            {{ site_settings.blog_name }}
+        </h1>
+        <p class="text-gray-400 font-mono text-lg">
+            {% if current_lang == 'zh' %}
+            欢迎来到我的数字花园。
+            {% else %}
+            Welcome to my digital garden.
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="mb-12 flex flex-wrap justify-center gap-4">
+        <a href="{{ url_for('index') }}" 
+           class="px-4 py-2 border-2 font-mono text-sm font-bold transition-all duration-300
+                  {% if not active_category %}
+                  bg-neon-yellow text-black border-neon-yellow shadow-neo
+                  {% else %}
+                  border-gray-600 text-gray-400 hover:border-white hover:text-white
+                  {% endif %}">
+            {% if current_lang == 'zh' %}全部{% else %}ALL{% endif %}
+        </a>
+        {% for cat in all_categories %}
+        <a href="{{ url_for('index', category=cat.id) }}" 
+           class="px-4 py-2 border-2 font-mono text-sm font-bold transition-all duration-300
+                  {% if active_category and active_category.id == cat.id %}
+                  bg-neon-yellow text-black border-neon-yellow shadow-neo
+                  {% else %}
+                  border-gray-600 text-gray-400 hover:border-white hover:text-white
+                  {% endif %}">
+            {{ cat.name|upper }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="grid gap-8">
+        {% for post in posts %}
+        <article class="bg-card-bg border-2 border-white p-6 shadow-neo hover:shadow-neo-pink transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden group">
+            <!-- Decorative elements -->
+            <div class="absolute top-0 right-0 w-16 h-16 bg-neon-yellow opacity-10 -mr-8 -mt-8 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+            
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex gap-2">
+                        <span class="bg-neon-blue text-black text-xs font-bold px-2 py-1 font-mono">
+                            {{ post.created_at.strftime('%Y-%m-%d') }}
+                        </span>
+                        {% if post.category %}
+                        <span class="bg-gray-800 text-neon-yellow text-xs font-bold px-2 py-1 font-mono border border-gray-600">
+                            {{ post.category.name }}
+                        </span>
+                        {% endif %}
+                        <span class="text-gray-500 text-xs font-mono px-2 py-1">
+                            {% if post.custom_author %}
+                                @{{ post.custom_author }}
+                            {% else %}
+                                @{{ post.author.username }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                    <div class="space-x-2">
+                        <a href="{{ url_for('edit_post', post_id=post.id) }}" class="text-gray-400 hover:text-neon-yellow"><i class="fas fa-edit"></i></a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <h2 class="text-2xl md:text-3xl font-bold mb-4 font-mono group-hover:text-neon-pink transition-colors">
+                    <a href="{{ url_for('post', post_id=post.id) }}">
+                        {% if current_lang == 'en' and post.title_en %}
+                            {{ post.title_en }}
+                        {% else %}
+                            {{ post.title }}
+                        {% endif %}
+                    </a>
+                </h2>
+                
+                <p class="text-gray-400 mb-6 line-clamp-3 font-sans">
+                    {% if current_lang == 'en' and post.content_en %}
+                        {{ post.content_en[:200] }}...
+                    {% else %}
+                        {{ post.content[:200] }}...
+                    {% endif %}
+                </p>
+                
+                <a href="{{ url_for('post', post_id=post.id) }}" class="inline-block bg-white text-black font-bold px-6 py-2 border-2 border-transparent hover:bg-black hover:text-white hover:border-white transition-all duration-300 font-mono text-sm">
+                    {% if current_lang == 'zh' %}阅读更多_{% else %}READ MORE_{% endif %}
+                </a>
+            </div>
+        </article>
+        {% else %}
+        <div class="text-center py-20 border-2 border-dashed border-gray-700 rounded-lg">
+            <p class="text-xl text-gray-500 font-mono">
+                {% if current_lang == 'zh' %}暂无内容。{% else %}No data found in this sector.{% endif %}
+            </p>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('create_post') }}" class="mt-4 inline-block text-neon-blue hover:underline">
+                {% if current_lang == 'zh' %}发布第一篇文章{% else %}Initialize first post{% endif %}
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

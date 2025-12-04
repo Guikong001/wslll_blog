@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if site_settings.logo_filename %}
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/logo/' + site_settings.logo_filename) }}">
+    {% endif %}
+    <title>{% block title %}{{ site_settings.blog_name }}{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SimpleMDE -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-pink': '#FF005C',
+                        'neon-yellow': '#F5FF00',
+                        'neon-blue': '#00F0FF',
+                        'dark-bg': '#0a0a0a',
+                        'card-bg': '#171717',
+                    },
+                    fontFamily: {
+                        'mono': ['"Space Mono"', 'monospace'],
+                        'sans': ['"Inter"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neo': '4px 4px 0px 0px #F5FF00',
+                        'neo-pink': '4px 4px 0px 0px #FF005C',
+                        'neo-blue': '4px 4px 0px 0px #00F0FF',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #e5e5e5;
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Space Mono', monospace;
+        }
+        .neo-brutalism {
+            border: 2px solid #e5e5e5;
+            transition: all 0.2s ease;
+        }
+        .neo-brutalism:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px #F5FF00;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FF005C;
+            border: 2px solid #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00F0FF;
+        }
+        /* Markdown Content Styles */
+        .prose h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; color: #00F0FF; }
+        .prose h2 { font-size: 1.5em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; color: #F5FF00; }
+        .prose p { margin-bottom: 1em; line-height: 1.7; }
+        .prose code { background-color: #2a2a2a; padding: 0.2em 0.4em; border-radius: 4px; color: #FF005C; font-family: 'Space Mono', monospace; }
+        .prose pre { background-color: #1a1a1a; padding: 1em; border-radius: 8px; overflow-x: auto; border: 1px solid #333; }
+        .prose pre code { background-color: transparent; color: #e5e5e5; }
+        .prose a { color: #00F0FF; text-decoration: underline; }
+        .prose blockquote { border-left: 4px solid #FF005C; padding-left: 1em; font-style: italic; color: #aaa; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose img { max-width: 100%; border: 2px solid #333; margin: 1em 0; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Navbar -->
+    <nav class="border-b-2 border-white bg-dark-bg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center flex-wrap">
+            <a href="{{ url_for('index') }}" class="flex items-center gap-3 text-2xl font-bold font-mono text-neon-pink hover:text-neon-yellow transition-colors">
+                {% if site_settings.logo_filename %}
+                    <img src="{{ url_for('static', filename='uploads/logo/' + site_settings.logo_filename) }}" alt="Logo" class="h-8 w-8 object-contain">
+                {% endif %}
+                &lt;{{ site_settings.blog_name }}&gt;
+            </a>
+            <div class="space-x-4 md:space-x-6 font-mono text-sm md:text-base flex items-center mt-2 md:mt-0">
+                <!-- Language Switch -->
+                <div class="flex border border-gray-600">
+                    <a href="{{ url_for('set_lang', lang='zh') }}" class="px-2 py-1 {% if current_lang == 'zh' %}bg-neon-yellow text-black font-bold{% else %}text-gray-400 hover:text-white{% endif %} transition-colors text-xs">中文</a>
+                    <a href="{{ url_for('set_lang', lang='en') }}" class="px-2 py-1 {% if current_lang == 'en' %}bg-neon-yellow text-black font-bold{% else %}text-gray-400 hover:text-white{% endif %} transition-colors text-xs border-l border-gray-600">EN</a>
+                </div>
+
+                <a href="{{ url_for('index') }}" class="hover:text-neon-blue transition-colors">
+                    {% if current_lang == 'zh' %}首页{% else %}HOME{% endif %}
+                </a>
+                <a href="{{ url_for('gallery') }}" class="hover:text-neon-blue transition-colors">
+                    {% if current_lang == 'zh' %}影像{% else %}GALLERY{% endif %}
+                </a>
+                <a href="{{ url_for('about') }}" class="hover:text-neon-blue transition-colors">
+                    {% if current_lang == 'zh' %}关于{% else %}ABOUT{% endif %}
+                </a>
+                
+                {% if current_user.is_authenticated %}
+                    <div class="relative group inline-block">
+                        <button class="hover:text-neon-yellow transition-colors flex items-center gap-1">
+                            {% if current_lang == 'zh' %}管理{% else %}ADMIN{% endif %} <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-48 bg-card-bg border-2 border-white shadow-neo-pink hidden group-hover:block p-2 z-50">
+                            <a href="{{ url_for('create_post') }}" class="block px-4 py-2 hover:bg-neon-pink hover:text-black transition-colors">
+                                {% if current_lang == 'zh' %}写文章{% else %}WRITE POST{% endif %}
+                            </a>
+                            <a href="{{ url_for('settings') }}" class="block px-4 py-2 hover:bg-neon-pink hover:text-black transition-colors">
+                                {% if current_lang == 'zh' %}设置{% else %}SETTINGS{% endif %}
+                            </a>
+                            <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-neon-pink hover:text-black transition-colors">
+                                {% if current_lang == 'zh' %}退出{% else %}LOGOUT{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="hover:text-neon-yellow transition-colors">
+                        {% if current_lang == 'zh' %}登录{% else %}LOGIN{% endif %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-8">
+                    {% for message in messages %}
+                        <div class="bg-neon-pink text-black font-bold p-4 border-2 border-white shadow-neo mb-2">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t-2 border-white bg-dark-bg py-8 mt-12">
+        <div class="container mx-auto px-4 text-center font-mono text-gray-500 space-y-2">
+            <p>Designed By Gemini 3 Pro ｜ Deploy By Wslll</p>
+            <p>AI Powered By Deepseek-3.2</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('opacity-100');
+            
+            // Notification Logic
+            {% if global_notifications %}
+            const today = new Date().toISOString().split('T')[0];
+            const lastSeen = localStorage.getItem('last_notification_date');
+            
+            // Only show if not seen today
+            if (lastSeen !== today) {
+                const notifications = [
+                    {% for notice in global_notifications %}
+                    `{{ notice|safe|replace('`', '\\`') }}`,
+                    {% endfor %}
+                ];
+                
+                let currentNoticeIndex = 0;
+                const modal = document.getElementById('notification-modal');
+                const contentContainer = document.getElementById('notification-content');
+                const nextBtn = document.getElementById('notification-next-btn');
+                const closeBtn = document.getElementById('notification-close-btn');
+                
+                if (modal && notifications.length > 0) {
+                    
+                    function showNotice(index) {
+                        if (index < notifications.length) {
+                            contentContainer.innerHTML = `<div class="prose prose-invert prose-sm border-l-4 border-neon-yellow pl-4">${notifications[index]}</div>`;
+                            modal.classList.remove('hidden');
+                            
+                            // Update button text based on whether it's the last notice
+                            if (index === notifications.length - 1) {
+                                nextBtn.innerText = "{% if current_lang == 'zh' %}收到{% else %}ACKNOWLEDGED{% endif %}";
+                                nextBtn.onclick = finishNotifications;
+                            } else {
+                                nextBtn.innerText = "{% if current_lang == 'zh' %}下一条{% else %}NEXT{% endif %}";
+                                nextBtn.onclick = () => showNotice(index + 1);
+                            }
+                        }
+                    }
+                    
+                    function finishNotifications() {
+                        modal.classList.add('hidden');
+                        localStorage.setItem('last_notification_date', today);
+                    }
+                    
+                    // Start showing first notice
+                    showNotice(0);
+                    
+                    // X button behavior
+                    closeBtn.onclick = finishNotifications; 
+                }
+            }
+            {% endif %}
+        });
+        
+        function closeNotification() {
+            document.getElementById('notification-modal').classList.add('hidden');
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+
+<!-- Global Notification Modal -->
+{% if global_notifications %}
+<div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-90 hidden z-[100] flex items-center justify-center p-4">
+    <div class="bg-card-bg border-2 border-white p-8 max-w-lg w-full shadow-neo-pink relative animate-bounce-in">
+        <button id="notification-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+        
+        <h2 class="text-2xl font-bold font-mono mb-6 text-neon-pink flex items-center">
+            <i class="fas fa-bell mr-3"></i>
+            {% if current_lang == 'zh' %}系统通知{% else %}SYSTEM NOTICE{% endif %}
+        </h2>
+        
+        <div id="notification-content" class="space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+            <!-- Content injected via JS -->
+        </div>
+        
+        <div class="mt-8 text-center">
+            <button id="notification-next-btn" class="bg-white text-black font-bold px-8 py-2 border-2 border-transparent hover:bg-neon-pink hover:text-white hover:border-white transition-colors font-mono">
+                <!-- Text injected via JS -->
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}

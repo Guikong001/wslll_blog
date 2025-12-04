@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if current_lang == 'zh' %}影像{% else %}Gallery{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-4xl font-bold font-mono text-neon-blue">
+            {% if current_lang == 'zh' %}影像记录{% else %}VISUAL LOGS{% endif %}
+        </h1>
+        {% if current_user.is_authenticated %}
+        <button onclick="document.getElementById('upload-modal').classList.remove('hidden')" 
+           class="px-4 py-2 bg-neon-pink text-black font-bold font-mono border-2 border-transparent hover:bg-white hover:border-neon-pink transition-colors">
+           {% if current_lang == 'zh' %}上传{% else %}UPLOAD NEW{% endif %}
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+        {% for photo in photos %}
+        <div class="break-inside-avoid bg-card-bg border-2 border-white p-2 shadow-neo hover:shadow-neo-blue transition-all duration-300 group relative">
+            <img src="{{ url_for('static', filename='uploads/photos/' + photo.filename) }}" 
+                 alt="{{ photo.title }}" 
+                 class="w-full h-auto block grayscale group-hover:grayscale-0 transition-all duration-500 cursor-zoom-in"
+                 onclick="openLightbox(this.src)">
+            
+            <div class="p-4">
+                {% if current_lang == 'en' and photo.title_en %}
+                    <h3 class="font-bold font-mono text-lg text-white mb-2">{{ photo.title_en }}</h3>
+                {% elif photo.title %}
+                    <h3 class="font-bold font-mono text-lg text-white mb-2">{{ photo.title }}</h3>
+                {% endif %}
+
+                {% if current_lang == 'en' and photo.description_en %}
+                    <p class="text-gray-400 text-sm font-mono">{{ photo.description_en }}</p>
+                {% elif photo.description %}
+                    <p class="text-gray-400 text-sm font-mono">{{ photo.description }}</p>
+                {% endif %}
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <form action="{{ url_for('delete_photo', photo_id=photo.id) }}" method="POST" class="absolute top-4 right-4 z-10 opacity-100 transition-opacity">
+                <button type="submit" class="bg-red-600 text-white p-2 hover:bg-red-700 shadow-lg border border-white" onclick="return confirm('{% if current_lang == 'zh' %}删除这张照片？{% else %}Delete this photo?{% endif %}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="text-gray-500 font-mono col-span-full text-center py-20">
+            {% if current_lang == 'zh' %}暂无影像数据。{% else %}No visual data available.{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="upload-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-card-bg border-2 border-white p-8 max-w-md w-full shadow-neo-pink relative">
+        <button onclick="document.getElementById('upload-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+        
+        <h2 class="text-2xl font-bold font-mono mb-6 text-neon-pink">
+            {% if current_lang == 'zh' %}上传影像{% else %}UPLOAD VISUAL{% endif %}
+        </h2>
+        
+        <form action="{{ url_for('upload_photo') }}" method="POST" enctype="multipart/form-data">
+            <div class="mb-4">
+                <label class="block text-gray-400 font-mono text-sm mb-2">
+                    {% if current_lang == 'zh' %}文件{% else %}FILE{% endif %}
+                </label>
+                <input type="file" name="photo" required accept="image/*"
+                    class="w-full bg-dark-bg border border-gray-600 p-2 text-gray-300 font-mono">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-400 font-mono text-sm mb-2">
+                    {% if current_lang == 'zh' %}标题 (可选){% else %}TITLE (OPTIONAL){% endif %}
+                </label>
+                <input type="text" name="title"
+                    class="w-full bg-dark-bg border border-gray-600 p-2 text-white font-mono focus:border-neon-pink focus:outline-none">
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-400 font-mono text-sm mb-2">
+                    {% if current_lang == 'zh' %}描述 (可选){% else %}DESCRIPTION (OPTIONAL){% endif %}
+                </label>
+                <textarea name="description" rows="3"
+                    class="w-full bg-dark-bg border border-gray-600 p-2 text-white font-mono focus:border-neon-pink focus:outline-none"></textarea>
+            </div>
+            
+            <button type="submit" class="w-full bg-white text-black font-bold py-2 border-2 border-transparent hover:bg-neon-pink hover:text-white hover:border-white transition-colors font-mono">
+                {% if current_lang == 'zh' %}开始上传{% else %}INITIATE UPLOAD{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Lightbox Modal -->
+<div id="lightbox-modal" class="fixed inset-0 bg-black bg-opacity-95 hidden z-[60] flex items-center justify-center cursor-zoom-out" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Full size" class="max-w-[95%] max-h-[95vh] object-contain border-2 border-white shadow-neo-blue">
+</div>
+
+<script>
+    function openLightbox(src) {
+        const modal = document.getElementById('lightbox-modal');
+        const img = document.getElementById('lightbox-img');
+        img.src = src;
+        modal.classList.remove('hidden');
+    }
+
+    function closeLightbox() {
+        const modal = document.getElementById('lightbox-modal');
+        modal.classList.add('hidden');
+    }
+</script>
+{% endblock %}

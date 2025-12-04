@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if current_lang == 'zh' %}关于{% else %}About{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-card-bg border-2 border-white p-8 md:p-12 shadow-neo-yellow relative overflow-hidden">
+        <!-- Decorative background text -->
+        <div class="absolute top-0 right-0 text-9xl font-bold text-gray-800 opacity-20 -mr-12 -mt-8 select-none pointer-events-none font-mono">
+            {% if current_lang == 'zh' %}关于{% else %}ABOUT{% endif %}
+        </div>
+
+        <div class="relative z-10">
+            <div class="prose prose-invert max-w-none">
+                {{ content|safe }}
+            </div>
+            
+            {% if social_links %}
+            <div class="mt-12 pt-8 border-t border-gray-700">
+                <h3 class="text-xl font-bold font-mono text-neon-yellow mb-4">
+                    {% if current_lang == 'zh' %}联系{% else %}CONNECT{% endif %}
+                </h3>
+                <div class="flex gap-4 flex-wrap">
+                    {% for link in social_links %}
+                    <a href="{{ link.url }}" target="_blank" class="w-10 h-10 flex items-center justify-center border border-gray-600 hover:bg-neon-blue hover:text-black hover:border-neon-blue transition-all duration-300 rounded-full" title="{{ link.icon }}">
+                        <i class="{{ link.icon }}"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

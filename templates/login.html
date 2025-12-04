@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if current_lang == 'zh' %}访问控制{% else %}Access Control{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+    <div class="bg-card-bg border-2 border-white p-8 shadow-neo-pink">
+        <h2 class="text-3xl font-bold font-mono mb-8 text-center text-neon-pink">
+            {% if current_lang == 'zh' %}访问控制{% else %}ACCESS CONTROL{% endif %}
+        </h2>
+        
+        <form method="POST" id="login-form">
+            <div class="mb-6">
+                <label for="phone" class="block text-sm font-mono text-gray-400 mb-2">
+                    {% if current_lang == 'zh' %}手机号{% else %}PHONE NUMBER{% endif %}
+                </label>
+                <div class="relative">
+                    <input type="text" name="phone" id="phone" required placeholder="{% if current_lang == 'zh' %}输入手机号{% else %}Enter phone number{% endif %}"
+                        class="w-full bg-dark-bg border border-gray-600 p-3 text-white focus:border-neon-blue focus:outline-none font-mono transition-colors">
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <label for="code" class="block text-sm font-mono text-gray-400 mb-2">
+                    {% if current_lang == 'zh' %}验证码{% else %}VERIFICATION CODE{% endif %}
+                </label>
+                <div class="flex gap-2">
+                    <input type="text" name="code" id="code" required placeholder="{% if current_lang == 'zh' %}6位验证码{% else %}6-digit code{% endif %}"
+                        class="w-full bg-dark-bg border border-gray-600 p-3 text-white focus:border-neon-blue focus:outline-none font-mono transition-colors">
+                    <button type="button" id="send-code-btn" 
+                        class="whitespace-nowrap bg-neon-blue text-black font-bold px-4 py-3 border-2 border-transparent hover:bg-white hover:border-neon-blue transition-all duration-300 font-mono text-sm">
+                        {% if current_lang == 'zh' %}获取验证码{% else %}GET CODE{% endif %}
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" class="w-full bg-white text-black font-bold py-3 border-2 border-transparent hover:bg-neon-pink hover:text-white hover:border-white transition-all duration-300 font-mono shadow-lg">
+                {% if current_lang == 'zh' %}登录{% else %}INITIATE SESSION{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const sendBtn = document.getElementById('send-code-btn');
+    const phoneInput = document.getElementById('phone');
+    let countdown = 0;
+    const isZh = {{ 'true' if current_lang == 'zh' else 'false' }};
+
+    sendBtn.addEventListener('click', async () => {
+        if (countdown > 0) return;
+        
+        const phone = phoneInput.value;
+        if (!phone) {
+            alert(isZh ? '请先输入手机号。' : 'Please enter phone number first.');
+            return;
+        }
+
+        // Disable button immediately
+        sendBtn.disabled = true;
+        sendBtn.textContent = isZh ? '发送中...' : 'SENDING...';
+
+        try {
+            const response = await fetch('{{ url_for("send_code") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone: phone })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                startCountdown(60);
+                alert(isZh ? '验证码已发送。' : 'Verification code sent.');
+            } else {
+                alert(data.message || (isZh ? '发送失败。' : 'Failed to send code.'));
+                sendBtn.disabled = false;
+                sendBtn.textContent = isZh ? '获取验证码' : 'GET CODE';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert(isZh ? '发生错误。' : 'An error occurred.');
+            sendBtn.disabled = false;
+            sendBtn.textContent = isZh ? '获取验证码' : 'GET CODE';
+        }
+    });
+
+    function startCountdown(seconds) {
+        countdown = seconds;
+        sendBtn.disabled = true;
+        
+        const timer = setInterval(() => {
+            countdown--;
+            sendBtn.textContent = isZh ? `${countdown}秒后重试` : `RETRY IN ${countdown}s`;
+            
+            if (countdown <= 0) {
+                clearInterval(timer);
+                sendBtn.disabled = false;
+                sendBtn.textContent = isZh ? '获取验证码' : 'GET CODE';
+            }
+        }, 1000);
+    }
+</script>
+{% endblock %}

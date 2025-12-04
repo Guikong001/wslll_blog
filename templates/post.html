@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.display_title }} - {{ site_settings.blog_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <article class="bg-card-bg border-2 border-white p-8 shadow-neo-blue relative">
+        <header class="mb-8 border-b border-gray-800 pb-8">
+            <div class="flex justify-between items-center mb-4">
+                <a href="{{ url_for('index') }}" class="text-gray-500 hover:text-white transition-colors font-mono text-sm">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    {% if current_lang == 'zh' %}返回{% else %}BACK{% endif %}
+                </a>
+                <span class="font-mono text-neon-blue text-sm">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+            
+            <h1 class="text-3xl md:text-5xl font-bold font-mono mb-4 text-white leading-tight">
+                {{ post.display_title }}
+            </h1>
+            
+            <div class="flex items-center text-sm text-gray-400 font-mono">
+                <span class="mr-2">{% if current_lang == 'zh' %}作者{% else %}BY{% endif %}</span>
+                <span class="text-neon-pink font-bold">
+                    {% if post.custom_author %}
+                        {{ post.custom_author }}
+                    {% else %}
+                        {{ post.author.username }}
+                    {% endif %}
+                </span>
+                {% if post.category %}
+                <span class="mx-2">/</span>
+                <span class="text-neon-yellow">{{ post.category.name }}</span>
+                {% endif %}
+                
+                {% if current_lang == 'en' and post.title_en %}
+                <span class="ml-4 px-2 py-1 bg-gray-800 text-xs text-gray-400 border border-gray-600">TRANSLATED BY DEEPSEEK</span>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- AI Summary Section -->
+        {% if (current_lang == 'zh' and post.summary_zh) or (current_lang == 'en' and post.summary_en) %}
+        <div class="mb-8 p-6 bg-gray-900 border-l-4 border-neon-blue font-mono text-sm text-gray-300">
+            <div class="flex items-center mb-2 text-neon-blue font-bold">
+                <i class="fas fa-robot mr-2"></i>
+                <span>{% if current_lang == 'zh' %}AI 摘要 (DeepSeek){% else %}AI SUMMARY (DeepSeek){% endif %}</span>
+            </div>
+            <div id="ai-summary-content" class="leading-relaxed"></div>
+            <div class="hidden" id="raw-summary">{% if current_lang == 'zh' %}{{ post.summary_zh }}{% else %}{{ post.summary_en }}{% endif %}</div>
+        </div>
+        {% endif %}
+
+        <div class="prose prose-invert max-w-none">
+            {{ post.html_content|safe }}
+        </div>
+        
+        {% if current_user.is_authenticated %}
+        <div class="mt-12 pt-8 border-t border-gray-800 flex justify-end space-x-4">
+            <a href="{{ url_for('edit_post', post_id=post.id) }}" class="px-4 py-2 border border-neon-yellow text-neon-yellow hover:bg-neon-yellow hover:text-black transition-colors font-mono text-sm font-bold">
+                {% if current_lang == 'zh' %}编辑{% else %}EDIT SYSTEM{% endif %}
+            </a>
+            <form action="{{ url_for('delete_post', post_id=post.id) }}" method="POST" onsubmit="return confirm('{% if current_lang == 'zh' %}确定要删除吗？{% else %}Are you sure you want to delete this protocol?{% endif %}');">
+                <button type="submit" class="px-4 py-2 border border-neon-pink text-neon-pink hover:bg-neon-pink hover:text-black transition-colors font-mono text-sm font-bold">
+                    {% if current_lang == 'zh' %}删除{% else %}TERMINATE{% endif %}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </article>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const summaryContent = document.getElementById('ai-summary-content');
+    const rawSummary = document.getElementById('raw-summary');
+    
+    if (summaryContent && rawSummary) {
+        const text = rawSummary.textContent.trim();
+        let index = 0;
+        
+        function typeWriter() {
+            if (index < text.length) {
+                summaryContent.textContent += text.charAt(index);
+                index++;
+                setTimeout(typeWriter, 30); // Adjust typing speed here (lower is faster)
+            }
+        }
+        
+        typeWriter();
+    }
+});
+</script>
+{% endblock %}

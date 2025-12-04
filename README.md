@@ -15,7 +15,6 @@ Wslll Blog is a feature-rich, bilingual (Chinese/English) blog system built with
 *   **Content Management**: Create, edit, and delete blog posts with Markdown support.
 *   **Photo Gallery**: Upload and manage photos with descriptions.
 *   **Authentication**:
-    *   Traditional username/password login.
     *   SMS Login via Spug Push.
 *   **Global Notifications**: Site-wide notifications configurable via settings.
 *   **Responsive Design**: Clean and modern interface.
@@ -68,10 +67,9 @@ Wslll Blog is a feature-rich, bilingual (Chinese/English) blog system built with
     Open your browser and visit `http://localhost:15013`.
 
 3.  **Admin Login**
-    *   **Default Username**: `admin`
-    *   **Default Password**: `admin123`
-    
-    *Please change the password immediately after your first login via the Settings page.*
+    *   Access the login page.
+    *   Enter your authorized phone number to receive an SMS code.
+    *   **Note**: Ensure you configure the `ALLOWED_PHONE` and SMS settings in `app.py`.
 
 ### Project Structure
 
@@ -99,7 +97,6 @@ Wslll Blog 是一个基于 Flask 构建的功能丰富的双语（中/英）博�
 *   **内容管理**：支持 Markdown 的博客文章创建、编辑和删除。
 *   **照片墙**：上传和管理带有描述的照片。
 *   **身份验证**：
-    *   传统的用户名/密码登录。
     *   通过 Spug Push 的短信验证码登录。
 *   **全局通知**：可通过设置配置的全站通知。
 *   **响应式设计**：简洁现代的界面。
@@ -152,10 +149,9 @@ Wslll Blog 是一个基于 Flask 构建的功能丰富的双语（中/英）博�
     打开浏览器并访问 `http://localhost:15013`。
 
 3.  **管理员登录**
-    *   **默认用户名**：`admin`
-    *   **默认密码**：`admin123`
-    
-    *请在首次登录后立即在设置页面修改密码。*
+    *   访问登录页面。
+    *   输入授权的手机号码以接收短信验证码。
+    *   **注意**：请确保在 `app.py` 中配置了 `ALLOWED_PHONE` 和短信相关设置。
 
 ### 项目结构
 

@@ -175,6 +175,39 @@ def async_process_post(app, post_id):
         db.session.commit()
         print(f"AI processing completed for post {post_id}.")
 
+def async_process_photo(app, photo_id):
+    with app.app_context():
+        photo = Photo.query.get(photo_id)
+        if not photo:
+            return
+        
+        print(f"Starting AI processing for photo {photo_id}...")
+        
+        if photo.title and not photo.title_en:
+            photo.title_en = translate_text(photo.title)
+            
+        if photo.description and not photo.description_en:
+            photo.description_en = translate_text(photo.description)
+            
+        db.session.commit()
+        print(f"AI processing completed for photo {photo_id}.")
+
+def async_process_settings(app):
+    with app.app_context():
+        settings = SiteSetting.query.first()
+        if not settings:
+            return
+            
+        print("Starting AI processing for site settings...")
+        
+        if settings.about_content:
+            # Always re-translate if content exists, or you could check if changed
+            # For simplicity, we assume if this is called, we want to translate
+            settings.about_content_en = translate_text(settings.about_content)
+            
+        db.session.commit()
+        print("AI processing completed for site settings.")
+
 # Routes
 def get_blog_context():
     """
@@ -528,7 +561,7 @@ def settings():
             site_settings.deepseek_api_key = new_key
         
         # Auto Translate About Content
-        site_settings.about_content_en = translate_text(site_settings.about_content)
+        # site_settings.about_content_en = translate_text(site_settings.about_content)
         
         # Process Social Links
         social_links = []
@@ -552,7 +585,11 @@ def settings():
                 site_settings.logo_filename = filename
         
         db.session.commit()
-        flash('Settings updated.')
+
+        # Start background task for AI processing (About Content Translation)
+        threading.Thread(target=async_process_settings, args=(app,)).start()
+
+        flash('Settings updated. AI translation for About Me is running in background.')
         return redirect(url_for('settings'))
     return render_template('settings.html', settings=site_settings)
 
@@ -575,19 +612,23 @@ def upload_photo():
             description = request.form.get('description')
             
             # Auto Translate
-            title_en = translate_text(title)
-            description_en = translate_text(description)
+            # title_en = translate_text(title)
+            # description_en = translate_text(description)
 
             new_photo = Photo(
                 filename=filename,
                 title=title,
-                title_en=title_en,
+                # title_en=title_en,
                 description=description,
-                description_en=description_en
+                # description_en=description_en
             )
             db.session.add(new_photo)
             db.session.commit()
-            flash('Photo uploaded successfully.')
+
+            # Start background task for AI processing
+            threading.Thread(target=async_process_photo, args=(app, new_photo.id)).start()
+
+            flash('Photo uploaded successfully. AI translation running in background.')
     return redirect(url_for('gallery'))
 
 @app.route('/gallery/delete/<int:photo_id>', methods=['POST'])

@@ -4,3 +4,5 @@ Flask-Login
 Flask-WTF
 email_validator
 Markdown
+requests
+openai

@@ -7,7 +7,7 @@ import json
 import threading
 import uuid
 from datetime import timedelta, datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, send_from_directory, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, send_from_directory, jsonify, session, Response, stream_with_context
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -16,7 +16,7 @@ import markdown
 from openai import OpenAI
 
 app = Flask(__name__)
-# Use "openssl rand -hex 32" to generate a secret key
+# change the secret key to a random string, you can use "openssl rand -hex 32"
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -26,9 +26,9 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=14) # 14 days login se
 
 # DeepSeek Configuration
 DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
-DEEPSEEK_API_KEY = 'your_deepseek_api_key_here'
+DEEPSEEK_API_KEY = 'use_your_own_key'
 
-def get_deepseek_key():
+def get_deepseek_key(): 
     # Try database first
     with app.app_context():
         try:
@@ -41,8 +41,8 @@ def get_deepseek_key():
     return DEEPSEEK_API_KEY
 
 # Configuration for SMS Login
-ALLOWED_PHONE = 'your_allowed_phone_number_here'
-Spug_SMS_Template_Code = 'your_spug_sms_template_code_here'
+ALLOWED_PHONE = 'use_your_own_phone'
+Spug_SMS_Template_Code = 'use_your_own_Spug_template_code'
 OTP_STORE = {} # Format: {phone: {'code': '123456', 'timestamp': 1234567890}}
 
 db.init_app(app)
@@ -176,6 +176,86 @@ def async_process_post(app, post_id):
         print(f"AI processing completed for post {post_id}.")
 
 # Routes
+def get_blog_context():
+    """
+    Aggregates blog content for AI context.
+    """
+    context_parts = []
+    
+    # 1. Site Settings (Basic Info)
+    settings = SiteSetting.query.first()
+    if settings:
+        context_parts.append(f"Blog Name: {settings.blog_name}")
+        context_parts.append(f"About Content: {settings.about_content}")
+    
+    # 2. Posts (Limit to last 10 to avoid token limits, simplified)
+    posts = Post.query.order_by(Post.created_at.desc()).limit(10).all()
+    if posts:
+        context_parts.append("\nRecent Articles:")
+        for post in posts:
+            # Build absolute URL (assuming standard route)
+            # Note: We can't use url_for easily outside request context without application context, 
+            # but here we are inside a request usually.
+            post_url = url_for('post', post_id=post.id, _external=True)
+            summary = post.summary_zh if post.summary_zh else (post.content[:200] + "...")
+            context_parts.append(f"- Title: {post.title}\n  URL: {post_url}\n  Summary: {summary}")
+            
+    return "\n\n".join(context_parts)
+
+@app.route('/api/chat', methods=['POST'])
+def chat_api():
+    data = request.get_json()
+    user_message = data.get('message')
+    history = data.get('history', []) # List of {role, content}
+    
+    if not user_message:
+        return jsonify({'error': 'Message is required'}), 400
+        
+    api_key = get_deepseek_key()
+    client = OpenAI(
+        api_key=api_key,
+        base_url=DEEPSEEK_BASE_URL
+    )
+    
+    # Construct system prompt with context
+    site_context = get_blog_context()
+    system_prompt = f"""You are a helpful AI assistant for this blog. 
+    Your goal is to assist visitors by answering questions based on the blog's content.
+    
+    Here is the context of the blog:
+    {site_context}
+    
+    IMPORTANT INSTRUCTIONS:
+    1. If the user asks about specific articles, refer to them by title AND provide the URL.
+    2. Format links in Markdown like this: [Article Title](URL).
+    3. If the answer is not in the context, answer to the best of your general knowledge but mention that it's not explicitly in the blog.
+    4. Be polite, concise, and helpful.
+    """
+    
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Append conversation history (limit to last 6 messages to save context)
+    for msg in history[-6:]:
+        messages.append(msg)
+        
+    messages.append({"role": "user", "content": user_message})
+    
+    def generate():
+        try:
+            response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=messages,
+                stream=True
+            )
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        except Exception as e:
+            print(f"Chat API Error: {e}")
+            yield f"Error: {str(e)}"
+
+    return Response(stream_with_context(generate()), mimetype='text/plain')
+
 @app.route('/set_lang/<lang>')
 def set_lang(lang):
     if lang in ['zh', 'en']:

@@ -160,7 +160,7 @@
     <footer class="border-t-2 border-white bg-dark-bg py-8 mt-12">
         <div class="container mx-auto px-4 text-center font-mono text-gray-500 space-y-2">
             <p>Designed By Gemini 3 Pro ｜ Deploy By Wslll</p>
-            <p>AI Powered By Deepseek-3.2</p>
+            <p>AI Powered By Deepseek-3.2 ｜ <a href="https://beian.miit.gov.cn/" target="_blank" class="hover:text-neon-blue transition-colors">鄂ICP备2022015978号-4</a></p>
         </div>
     </footer>
 
@@ -225,31 +225,243 @@
         }
     </script>
     {% block scripts %}{% endblock %}
-</body>
-</html>
 
-<!-- Global Notification Modal -->
-{% if global_notifications %}
-<div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-90 hidden z-[100] flex items-center justify-center p-4">
-    <div class="bg-card-bg border-2 border-white p-8 max-w-lg w-full shadow-neo-pink relative animate-bounce-in">
-        <button id="notification-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-            <i class="fas fa-times text-xl"></i>
+    <!-- AI Chat Widget -->
+    <div id="ai-chat-widget" class="fixed bottom-6 right-6 z-[90] font-mono">
+        <!-- Chat Button -->
+        <button id="ai-chat-btn" class="w-14 h-14 bg-neon-pink border-2 border-white rounded-full shadow-neo-blue hover:shadow-neo-yellow transition-all duration-300 flex items-center justify-center text-black text-2xl z-[91] relative group">
+            <i class="fas fa-robot group-hover:scale-110 transition-transform"></i>
+            <span class="absolute right-full mr-3 bg-black text-white text-xs px-2 py-1 rounded border border-neon-blue opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                {% if current_lang == 'zh' %}AI 助手{% else %}AI Assistant{% endif %}
+            </span>
         </button>
-        
-        <h2 class="text-2xl font-bold font-mono mb-6 text-neon-pink flex items-center">
-            <i class="fas fa-bell mr-3"></i>
-            {% if current_lang == 'zh' %}系统通知{% else %}SYSTEM NOTICE{% endif %}
-        </h2>
-        
-        <div id="notification-content" class="space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
-            <!-- Content injected via JS -->
-        </div>
-        
-        <div class="mt-8 text-center">
-            <button id="notification-next-btn" class="bg-white text-black font-bold px-8 py-2 border-2 border-transparent hover:bg-neon-pink hover:text-white hover:border-white transition-colors font-mono">
-                <!-- Text injected via JS -->
-            </button>
+
+        <!-- Chat Window -->
+        <div id="ai-chat-window" class="hidden absolute bottom-16 right-0 w-80 md:w-96 bg-card-bg border-2 border-white shadow-neo-pink flex flex-col transition-all duration-300 origin-bottom-right transform scale-95 opacity-0 h-[500px] max-h-[80vh]">
+            <!-- Header -->
+            <div class="bg-dark-bg border-b border-gray-700 p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-neon-green rounded-full animate-pulse" style="background-color: #00ff00;"></div>
+                    <h3 class="text-neon-pink font-bold">DEEPSEEK AI</h3>
+                </div>
+                <button id="ai-chat-close" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="ai-messages" class="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar bg-black/50">
+                <!-- Welcome Message -->
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-neon-pink flex-shrink-0 flex items-center justify-center border border-white">
+                        <i class="fas fa-robot text-xs text-black"></i>
+                    </div>
+                    <div class="bg-card-bg border border-gray-700 p-3 text-sm text-gray-300 rounded-tr-lg rounded-bl-lg rounded-br-lg shadow-sm max-w-[85%]">
+                        {% if current_lang == 'zh' %}
+                        你好！我是本站的 AI 助手。我可以基于博客内容回答你的问题。
+                        {% else %}
+                        Hello! I'm the AI assistant. I can answer questions based on this blog's content.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 border-t border-gray-700 bg-dark-bg">
+                <form id="ai-chat-form" class="flex gap-2">
+                    <input type="text" id="ai-input" 
+                        placeholder="{% if current_lang == 'zh' %}问点什么...{% else %}Ask something...{% endif %}" 
+                        class="flex-grow bg-black border border-gray-600 p-2 text-sm text-white focus:border-neon-blue focus:outline-none font-mono transition-colors"
+                        autocomplete="off">
+                    <button type="submit" class="bg-neon-blue text-black px-3 py-2 font-bold hover:bg-white transition-colors border border-transparent hover:border-neon-blue">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-{% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatBtn = document.getElementById('ai-chat-btn');
+            const chatWindow = document.getElementById('ai-chat-window');
+            const closeBtn = document.getElementById('ai-chat-close');
+            const chatForm = document.getElementById('ai-chat-form');
+            const chatInput = document.getElementById('ai-input');
+            const messagesContainer = document.getElementById('ai-messages');
+            
+            let chatHistory = []; // Store conversation history
+            let isOpen = false;
+
+            // Toggle Chat Window
+            function toggleChat() {
+                isOpen = !isOpen;
+                if (isOpen) {
+                    chatWindow.classList.remove('hidden');
+                    // Small delay to allow display:block to apply before transition
+                    setTimeout(() => {
+                        chatWindow.classList.remove('scale-95', 'opacity-0');
+                        chatWindow.classList.add('scale-100', 'opacity-100');
+                        chatInput.focus();
+                    }, 10);
+                } else {
+                    chatWindow.classList.remove('scale-100', 'opacity-100');
+                    chatWindow.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => {
+                        chatWindow.classList.add('hidden');
+                    }, 300);
+                }
+            }
+
+            chatBtn.addEventListener('click', toggleChat);
+            closeBtn.addEventListener('click', toggleChat);
+
+            // Add Message to UI
+            function addMessage(content, isUser, isStreaming = false) {
+                const div = document.createElement('div');
+                div.className = `flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+                
+                const icon = isUser 
+                    ? `<div class="w-8 h-8 rounded-full bg-neon-yellow flex-shrink-0 flex items-center justify-center border border-white"><i class="fas fa-user text-xs text-black"></i></div>`
+                    : `<div class="w-8 h-8 rounded-full bg-neon-pink flex-shrink-0 flex items-center justify-center border border-white"><i class="fas fa-robot text-xs text-black"></i></div>`;
+                
+                const bubbleClass = isUser
+                    ? "bg-neon-yellow text-black border-neon-yellow"
+                    : "bg-card-bg text-gray-300 border-gray-700";
+                
+                // Render content with Markdown if it's AI response
+                const renderedContent = isUser ? content : marked.parse(content);
+
+                div.innerHTML = `
+                    ${icon}
+                    <div class="${bubbleClass} border p-3 text-sm rounded-tl-lg rounded-tr-lg ${isUser ? 'rounded-bl-lg' : 'rounded-br-lg'} shadow-sm max-w-[85%] prose prose-invert prose-sm" style="max-width: 85%;">
+                        ${renderedContent}
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(div);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                if (isStreaming) {
+                    return div.querySelector('.prose'); // Return content element for updates
+                }
+            }
+
+            // Add Loading Indicator
+            function addLoading() {
+                const div = document.createElement('div');
+                div.id = 'ai-loading';
+                div.className = 'flex gap-3';
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-neon-pink flex-shrink-0 flex items-center justify-center border border-white">
+                        <i class="fas fa-robot text-xs text-black"></i>
+                    </div>
+                    <div class="bg-card-bg border border-gray-700 p-3 text-sm text-gray-300 rounded-tr-lg rounded-bl-lg rounded-br-lg shadow-sm flex items-center gap-1">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                    </div>
+                `;
+                messagesContainer.appendChild(div);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            function removeLoading() {
+                const loading = document.getElementById('ai-loading');
+                if (loading) loading.remove();
+            }
+
+            // Handle Form Submit
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = chatInput.value.trim();
+                if (!message) return;
+
+                // Add User Message
+                addMessage(message, true);
+                chatInput.value = '';
+                
+                // Add to history
+                chatHistory.push({"role": "user", "content": message});
+
+                // Show Loading
+                addLoading();
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            history: chatHistory.slice(0, -1)
+                        })
+                    });
+
+                    removeLoading();
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    // Initialize streaming response container
+                    let fullReply = "";
+                    const contentElement = addMessage("", false, true); // Create empty bubble
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        fullReply += chunk;
+                        
+                        // Update UI with partial markdown rendering
+                        // Note: Re-rendering markdown on every chunk might be heavy for very long texts but fine for chat
+                        contentElement.innerHTML = marked.parse(fullReply);
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                    
+                    // Final update
+                    chatHistory.push({"role": "assistant", "content": fullReply});
+
+                } catch (err) {
+                    removeLoading();
+                    addMessage("Network error. Please try again.", false);
+                    console.error(err);
+                }
+            });
+        });
+    </script>
+
+    <!-- Global Notification Modal -->
+    {% if global_notifications %}
+    <div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-90 hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-card-bg border-2 border-white p-8 max-w-lg w-full shadow-neo-pink relative animate-bounce-in">
+            <button id="notification-close-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            
+            <h2 class="text-2xl font-bold font-mono mb-6 text-neon-pink flex items-center">
+                <i class="fas fa-bell mr-3"></i>
+                {% if current_lang == 'zh' %}系统通知{% else %}SYSTEM NOTICE{% endif %}
+            </h2>
+            
+            <div id="notification-content" class="space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                <!-- Content injected via JS -->
+            </div>
+            
+            <div class="mt-8 text-center">
+                <button id="notification-next-btn" class="bg-white text-black font-bold px-8 py-2 border-2 border-transparent hover:bg-neon-pink hover:text-white hover:border-white transition-colors font-mono">
+                    <!-- Text injected via JS -->
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>
